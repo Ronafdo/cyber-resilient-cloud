@@ -25,6 +25,21 @@ The source IP is taken from the client connection, and sources exceeding the
 sliding-window threshold are blocked. Configure the defaults with
 `SHIELD_RATE_LIMIT` and `SHIELD_WINDOW_SECONDS`.
 
+## Encrypted file vault
+
+The dashboard's **Encrypted file vault** encrypts files in the browser with
+AES-256-GCM using a password that is never sent to the server. The API stores
+only the encrypted bytes, encryption metadata, and hashes. SQLite persists file
+metadata and a hash-linked audit trail under `data/`; set `CLOUD_DATA_DIR` to
+choose another data location.
+
+The API provides:
+
+- `POST /files` - store a browser-encrypted file payload
+- `GET /files` - list stored file metadata
+- `GET /files/<id>/download` - download encrypted bytes for browser decryption
+- `POST /files/<id>/verify` - verify the stored ciphertext against its recorded hash
+
 ## Deploy on Render
 
 This repository includes a `render.yaml` Blueprint configuration. In Render,

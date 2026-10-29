@@ -1,3 +1,6 @@
+import base64
+import hashlib
+
 from cyber_resilient_cloud.api.app import app
 
 
@@ -66,3 +69,31 @@ def test_shield_blocks_source_after_rate_limit():
 
     assert decision["allowed"] is False
     assert decision["reason"] == "rate_limit_exceeded"
+
+
+def test_encrypted_file_upload_download_and_verify():
+    client = app.test_client()
+    ciphertext = b"encrypted-browser-payload"
+    response = client.post("/files", json={
+        "filename": "report.txt",
+        "mime_type": "text/plain",
+        "plaintext_size": 18,
+        "plaintext_hash": hashlib.sha256(b"original-content").hexdigest(),
+        "salt": base64.b64encode(b"0123456789abcdef").decode(),
+        "nonce": base64.b64encode(b"123456789012").decode(),
+        "ciphertext": base64.b64encode(ciphertext).decode(),
+    })
+
+    assert response.status_code == 201
+    file_id = response.get_json()["id"]
+    download = client.get(f"/files/{file_id}/download")
+    assert download.status_code == 200
+    assert download.data == ciphertext
+    assert client.post(f"/files/{file_id}/verify").get_json()["valid"] is True
+
+
+def test_file_upload_rejects_plaintext_payload_shape():
+    client = app.test_client()
+    response = client.post("/files", json={"filename": "plain.txt"})
+
+    assert response.status_code == 400

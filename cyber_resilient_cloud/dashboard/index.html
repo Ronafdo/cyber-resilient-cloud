@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="Cyber-resilient cloud security operations dashboard" />
-    <title>Sentinel | Cyber-Resilient Cloud</title>
+    <title>Cyber-Resilient Cloud | Security Dashboard</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
@@ -55,7 +55,7 @@
   <body>
     <div class="shell">
       <aside>
-        <div class="brand"><span class="brand-mark">S</span> SENTINEL</div>
+        <div class="brand"><span class="brand-mark">C</span> CLOUD SECURITY</div>
         <nav>
           <a class="active" href="#overview"><span class="nav-icon">◈</span>Overview</a>
           <a href="#traffic"><span class="nav-icon">⌁</span>Traffic shield</a>
@@ -76,8 +76,9 @@
           <div class="card"><div class="metric-label">Blocked sources <span class="metric-icon">⊘</span></div><div class="metric-value" id="blocked-count">0</div><div class="metric-foot">Currently mitigated</div></div>
         </section>
         <section class="grid">
-          <div class="card" id="traffic"><div class="card-heading"><div><h2>Traffic shield</h2><span class="card-note">Simulate an incoming request for testing</span></div><button id="simulate-traffic">Simulate traffic</button></div><table><thead><tr><th>Decision</th><th>Source</th><th>Chain length</th></tr></thead><tbody id="traffic-body"></tbody></table></div>
-          <div class="card" id="integrity"><div class="card-heading"><div><h2>Integrity monitor</h2><span class="card-note">Test tamper response</span></div><button class="secondary" id="simulate-tamper">Simulate tamper</button></div><table><thead><tr><th>File</th><th>Status</th></tr></thead><tbody id="integrity-body"></tbody></table></div>
+          <div class="card" id="traffic"><div class="card-heading"><div><h2>Traffic shield</h2><span class="card-note">Send a validated request through the rate limiter</span></div><button id="simulate-traffic">Test shield</button></div><table><thead><tr><th>Decision</th><th>Source</th><th>Chain length</th></tr></thead><tbody id="traffic-body"></tbody></table></div>
+          <div class="card" id="integrity"><div class="card-heading"><div><h2>File integrity</h2><span class="card-note">Verify stored encrypted blobs</span></div><button class="secondary" id="simulate-tamper">Verify files</button></div><table><thead><tr><th>File</th><th>Status</th></tr></thead><tbody id="integrity-body"></tbody></table></div>
+          <div class="card wide" id="files"><div class="card-heading"><div><h2>Encrypted file vault</h2><span class="card-note">Files are encrypted in your browser before upload. The server never receives your password.</span></div></div><div class="actions"><input id="file-input" type="file" /><input id="file-password" type="password" placeholder="Encryption password" autocomplete="new-password" /><button id="upload-file">Encrypt &amp; upload</button></div><table><thead><tr><th>File</th><th>Size</th><th>Uploaded</th><th>Action</th></tr></thead><tbody id="files-body"></tbody></table></div>
           <div class="card wide" id="audit"><div class="card-heading"><div><h2>Recent audit activity</h2><span class="card-note">Hash-linked security events</span></div><span class="card-note" id="refresh-label">Updating...</span></div><table><thead><tr><th>Event</th><th>Source</th><th>Details</th></tr></thead><tbody id="chain-body"></tbody></table></div>
         </section>
       </main>

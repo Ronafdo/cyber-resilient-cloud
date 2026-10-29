@@ -3,13 +3,16 @@
 from __future__ import annotations
 
 import ipaddress
+import base64
+import hashlib
 import os
 from pathlib import Path
 
-from flask import Flask, jsonify, redirect, request, send_file
+from flask import Flask, Response, jsonify, redirect, request, send_file
 
 from cyber_resilient_cloud.blockchain.chain import append_block, create_chain
 from cyber_resilient_cloud.shield.ddos import DDoSShield, TrafficEvent
+from cyber_resilient_cloud.storage import Storage
 
 app = Flask(__name__, static_folder="../dashboard/static", static_url_path="/static")
 shield = DDoSShield(
@@ -17,6 +20,7 @@ shield = DDoSShield(
     window_seconds=float(os.getenv("SHIELD_WINDOW_SECONDS", "60")),
 )
 chain = create_chain()
+storage = Storage(os.getenv("CLOUD_DATA_DIR", Path(__file__).resolve().parents[2] / "data"))
 
 
 @app.get("/")
@@ -56,6 +60,7 @@ def ingest() -> tuple[dict, int]:
         return jsonify({"error": str(error)}), 400
 
     decision = shield.ingest_event(event)
+    decision["source_ip"] = event.source_ip
     append_block(chain, "traffic", {
         "source_ip": event.source_ip,
         "protocol": event.protocol,
@@ -64,6 +69,73 @@ def ingest() -> tuple[dict, int]:
         "reason": decision["reason"],
     })
     return jsonify({"decision": decision, "chain_length": len(chain["blocks"])}), 200
+
+
+@app.post("/files")
+def upload_file() -> tuple[dict, int]:
+    """Persist an encrypted browser payload without receiving the password or plaintext."""
+    payload = request.get_json(silent=True)
+    if not isinstance(payload, dict):
+        return jsonify({"error": "request body must be a JSON object"}), 400
+    try:
+        filename = _required_string(payload, "filename", 255)
+        mime_type = _required_string(payload, "mime_type", 127)
+        plaintext_size = _bounded_int(payload, "plaintext_size", 0, 25 * 1024 * 1024)
+        plaintext_hash = _required_string(payload, "plaintext_hash", 64)
+        salt = _required_string(payload, "salt", 64)
+        nonce = _required_string(payload, "nonce", 64)
+        ciphertext = base64.b64decode(_required_string(payload, "ciphertext", 40 * 1024 * 1024), validate=True)
+    except (ValueError, KeyError, base64.binascii.Error) as error:
+        return jsonify({"error": f"invalid encrypted file payload: {error}"}), 400
+    if not filename or "/" in filename or "\\" in filename:
+        return jsonify({"error": "filename must be a plain file name"}), 400
+    if len(ciphertext) > 30 * 1024 * 1024:
+        return jsonify({"error": "encrypted file exceeds the 30 MB limit"}), 413
+    record = storage.save_file({
+        "filename": filename, "mime_type": mime_type, "plaintext_size": plaintext_size,
+        "plaintext_hash": plaintext_hash, "ciphertext_hash": hashlib.sha256(ciphertext).hexdigest(),
+        "salt": salt, "nonce": nonce,
+    }, ciphertext)
+    return jsonify({"id": record["id"], "filename": filename, "size": plaintext_size}), 201
+
+
+@app.get("/files")
+def list_files() -> tuple[list[dict], int]:
+    return jsonify(storage.list_files()), 200
+
+
+@app.get("/files/<file_id>/metadata")
+def file_metadata(file_id: str) -> tuple[dict, int]:
+    record = storage.get_file(file_id)
+    if record is None:
+        return jsonify({"error": "file not found"}), 404
+    return jsonify({key: record[key] for key in (
+        "id", "filename", "mime_type", "plaintext_size", "plaintext_hash",
+        "ciphertext_hash", "salt", "nonce", "created_at",
+    )}), 200
+
+
+@app.get("/files/<file_id>/download")
+def download_file(file_id: str) -> Response | tuple[dict, int]:
+    record = storage.get_file(file_id)
+    if record is None:
+        return jsonify({"error": "file not found"}), 404
+    response = Response(storage.read_blob(record), mimetype="application/octet-stream")
+    response.headers["X-File-Name"] = record["filename"]
+    response.headers["X-Mime-Type"] = record["mime_type"]
+    response.headers["X-Salt"] = record["salt"]
+    response.headers["X-Nonce"] = record["nonce"]
+    response.headers["X-Plaintext-Hash"] = record["plaintext_hash"]
+    return response
+
+
+@app.post("/files/<file_id>/verify")
+def verify_file(file_id: str) -> tuple[dict, int]:
+    try:
+        result = storage.verify_file(file_id)
+    except FileNotFoundError:
+        return jsonify({"error": "file not found"}), 404
+    return jsonify(result), 200
 
 
 def _required_string(payload: dict, field: str, max_length: int) -> str:
@@ -99,6 +171,7 @@ def dashboard_data() -> tuple[dict, int]:
     """Return the current shield and blockchain state to the dashboard."""
     return jsonify({
         "shield_events": len(shield.events),
-        "chain_blocks": chain["blocks"],
+        "chain_blocks": chain["blocks"] + storage.audit_blocks(),
         "blocked_ips": list(shield.blocked_ips),
+        "files": storage.list_files(),
     }), 200
