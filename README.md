@@ -20,6 +20,11 @@ This workspace scaffolds a college capstone project for a defense-in-depth cloud
 
 Open <http://127.0.0.1:5000/dashboard>.
 
+The traffic shield accepts validated JSON events at `POST /shield/ingest`.
+The source IP is taken from the client connection, and sources exceeding the
+sliding-window threshold are blocked. Configure the defaults with
+`SHIELD_RATE_LIMIT` and `SHIELD_WINDOW_SECONDS`.
+
 ## Deploy on Render
 
 This repository includes a `render.yaml` Blueprint configuration. In Render,

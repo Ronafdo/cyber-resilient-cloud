@@ -35,7 +35,16 @@ async function refreshData() {
 async function postEvent(button, message) {
   button.disabled = true;
   try {
-    const response = await fetch('/shield/ingest', { method: 'POST' });
+    const response = await fetch('/shield/ingest', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        protocol: 'tcp',
+        packet_size: 1500,
+        tcp_flags: 'SYN',
+        http_entropy: 0.7
+      })
+    });
     if (!response.ok) throw new Error('Event request failed');
     const data = await response.json();
     state.trafficEvents.push(data);
