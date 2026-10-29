@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Cyber-Resilient Cloud Dashboard</title>
+    <style>
+      body { font-family: Arial, sans-serif; margin: 2rem; background: #0f172a; color: #e2e8f0; }
+      .card { background: #111827; padding: 1rem; border-radius: 8px; margin-bottom: 1rem; }
+      table { width: 100%; border-collapse: collapse; }
+      th, td { padding: 0.5rem; border-bottom: 1px solid #334155; text-align: left; }
+      button { background: #2563eb; color: white; border: none; padding: 0.6rem 1rem; border-radius: 6px; cursor: pointer; margin-right: 0.5rem; }
+    </style>
+  </head>
+  <body>
+    <h1>Cyber-Resilient Cloud Dashboard</h1>
+    <div class="card">
+      <h2>System Health</h2>
+      <p>Status: <strong id="health-status">loading...</strong></p>
+      <p>Shield events: <strong id="shield-count">0</strong></p>
+      <p>Chain length: <strong id="chain-count">0</strong></p>
+    </div>
+    <div class="card">
+      <h2>Live Traffic</h2>
+      <button id="simulate-traffic">Simulate traffic</button>
+      <table>
+        <tr><th>Decision</th><th>Chain length</th></tr>
+        <tbody id="traffic-body"></tbody>
+      </table>
+    </div>
+    <div class="card">
+      <h2>Integrity Status</h2>
+      <button id="simulate-tamper">Simulate tamper</button>
+      <table>
+        <tr><th>File</th><th>Status</th><th>Decision</th></tr>
+        <tbody id="integrity-body"></tbody>
+      </table>
+    </div>
+    <div class="card">
+      <h2>Backend Activity</h2>
+      <table>
+        <tr><th>Action</th><th>Detail</th></tr>
+        <tbody id="activity-body"></tbody>
+      </table>
+    </div>
+    <div class="card">
+      <h2>Audit Log</h2>
+      <table>
+        <tr><th>Event</th><th>Source</th></tr>
+        <tbody id="chain-body"></tbody>
+      </table>
+    </div>
+    <script src="/static/app.js"></script>
+  </body>
+</html>
